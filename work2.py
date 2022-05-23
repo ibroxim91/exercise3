@@ -1,8 +1,11 @@
 import asyncio
 import requests
-from tqdm import tqdm
+from tqdm import tqdm 
 from concurrent.futures import ProcessPoolExecutor
-import re
+import re 
+
+url = "http://google.com" # Or  url = input("Enter a valid url")
+request_count = 5
 
 regex = re.compile(
         r'^(?:http|ftp)s?://' 
@@ -12,18 +15,25 @@ regex = re.compile(
         r'(?::\d+)?' 
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-request_count = 1000
 
-url = "http://google.com" # Or  url = input("Enter a valid url")
 if re.match(regex, url) is  None :
     raise ValueError("Enter a valid url")
 
 def request_url():
     requests.get(url)
-    print("Done")
+
+async def responses(tasks):
+    responses = [await f for f in tqdm(asyncio.as_completed(tasks), total=len(tasks))] # progress bar for  responses 
+    return responses
 
 if __name__ == "__main__":
     executor = ProcessPoolExecutor(2)
-    loop = asyncio.get_event_loop()
-    for i in tqdm(range(request_count +1)):
-        loop.run_in_executor(executor, request_url)
+    loop = asyncio.new_event_loop()
+    tasks = []
+    for i in tqdm(range(request_count)):  # progress bar for  processes 
+        task = loop.run_in_executor(None, request_url)
+        tasks.append(task)
+        
+    asyncio.gather(*tasks)
+    r = loop.run_until_complete(responses(tasks))
+
